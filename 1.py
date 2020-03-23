@@ -67,3 +67,6 @@ serch()
 print(count)
 
 print()
+
+if __name__ == '__main__':
+    print(1111)
