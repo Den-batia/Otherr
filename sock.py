@@ -1,60 +1,69 @@
 
-import socket
-import select
+import asyncio
+import aiohttp
+import datetime
+import concurrent.futures
+import time
+import threading
+from  multiprocessing import Process
+lis = {}
 
-tasks = []
-to_read = {}
-to_write = {}
+def prt(a, qwe):
+    global lis
+    b = 1
+    for i in range(a):
+         b = a+i
+    lis[qwe] = b
+    print(lis)
 
-serv_sock = socket.socket()
-serv_sock.bind(('', 9000))
-serv_sock.listen()
+def asy(a,b, lis):
+    with threading.Lock():
+        lis[a] = b
 
-
-def server():
-    while True:
-        yield ('r', serv_sock)
-        conn, adrr = serv_sock.accept()
-        tasks.append(client(conn))
-
-
-def client(conn):
-    while True:
-        yield ('r', conn)
-        data = conn.recv(1024)
-        if not data:
-            break
-        else:
-             yield ('w', conn)
-             conn.send(data.upper())
-
-    conn.close()
-
-tasks.append(server())
-
-def loop():
-    while True:
-        while not tasks:
-            r_to_r, r_to_w, _ = select.select(to_read, to_write, ())
-            for i in r_to_r:
-                tasks.append(to_read.pop(i))
-            for i in r_to_w:
-                tasks.append(to_write.pop(i))
+async def sd(i, url, sesion):
+    global w
+    async with sesion.get(url) as req:
+        r = await req.text()
+        w = r
 
 
-        gen = tasks.pop(0)
-        mask, conn = next(gen)
-        if (mask == 'r'):
-            to_read[conn] = gen
-        if (mask == 'w'):
-            to_write[conn] = gen
+async def main():
+    tasks = []
+    url = 'https://onliner.by'
 
-        # except Exception as e:
-        #     print(e)
-
-
-
+    async with aiohttp.ClientSession() as sesion:
+        for i in range(10):
+            tasks.append(sd(i, url, sesion))
+        await asyncio.gather(*tasks)
 
 
 if __name__ == '__main__':
-    loop()
+    t3 = datetime.datetime.now()
+
+    a = Process(target=prt, args=(2**25,'w',))
+    v = Process(target=prt, args=(2 ** 25, 'a',))
+    a.start()
+    v.start()
+    a.join()
+    v.join()
+    # asyncio.get_event_loop().run_until_complete(main())
+    # asyncio.run(main())
+    # t = threading.Thread(target=prt, args=(2**25, 'w'))
+    # t1 = threading.Thread(target=prt, args=(2 ** 25, 'a'))
+    # t.start()
+    # t1.start()
+    # with concurrent.futures.ProcessPoolExecutor(max_workers=2) as pool:
+    #     try:
+    #         a = pool.submit(prt, *(2**25, 'w'))
+    #         pool.submit(prt, *(2 ** 25, 'e'))
+    #
+    #     except Exception as e:
+    #         print(e)
+
+    print(lis)
+    # a = prt(2**25, 'w')
+    # b = prt(2**25, 'a')
+    # t.join()
+    # t1.join()
+    print(sum([lis[i] for i in lis]))
+    print(datetime.datetime.now() - t3)

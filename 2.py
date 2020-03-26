@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 import socket
+
 
 sock = socket.socket()
 sock.connect(('localhost', 9000))
